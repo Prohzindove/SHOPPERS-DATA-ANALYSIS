@@ -1,4 +1,4 @@
-<img width="1920" height="760" alt="BRIGHTLEARN COFFEE SHOP SALES ANALYSIS REPORT" src="https://github.com/user-attachments/assets/a983adaa-6ce7-436c-bc91-0cc76026a914" />
+<img width="1920" height="760" alt="BRIGHTLEARN COFFEE SHOP SALES ANALYSIS REPORT" src="https://github.com/Prohzindove/SHOPPERS-DATA-ANALYSIS/blob/main/SHOPPERS%20PERFORMANCE%20ANALYSIS.png" />
 
 
 ## Project Overview
