@@ -49,6 +49,7 @@ import seaborn as sn
 
 # COMMAND ----------
 
+# DBTITLE 1,Customers table data ingestion
 customers =spark.table("shoppers.data.customers").toPandas()
 
 # COMMAND ----------
@@ -59,6 +60,7 @@ customers =spark.table("shoppers.data.customers").toPandas()
 
 # COMMAND ----------
 
+# DBTITLE 1,Customers table data inspection
 # checking the first few columns of the dataset to have an idea of what it contains.
 customers.head()
 
@@ -111,7 +113,7 @@ customers["City"].value_counts()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC It shows that there are entry errors where Tehran was aalos entered as tehran with a small letter t and Mashhad was also entered as Mashad with a single h. These will be standardised to the entry with more values (Tehran and Mashhad)
+# MAGIC It shows that there are entry errors where Tehran was also entered as tehran with a small letter t and Mashhad was also entered as Mashad with a single h. These will be standardised to the entry with more values (Tehran and Mashhad)
 
 # COMMAND ----------
 
@@ -122,6 +124,20 @@ customers["CustomerSegment"].nunique()
 
 # checking the number of customers in each unique customer segment
 customers["CustomerSegment"].value_counts()
+
+# COMMAND ----------
+
+# DBTITLE 1,Visualize unique customer segments with percentage labels
+# visualising unique customer segments
+customers['CustomerSegment'].value_counts().plot(kind='pie', color='blue', autopct='%1.1f%%')
+plt.title('Unique Customer Segments')
+plt.ylabel('')
+plt.show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Regular customer segment constitutes the highest number of customers (more than half the number of customers). The least number of customers are in the VIP segment.
 
 # COMMAND ----------
 
@@ -162,6 +178,7 @@ customers["SignupDate"].max()
 
 # COMMAND ----------
 
+# DBTITLE 1,Customers data cleaning
 # standardising city entries that were wrongly entered
 customers["City"]=customers["City"].replace({'tehran': 'Tehran','Mashad': 'Mashhad'})
 
@@ -169,6 +186,14 @@ customers["City"]=customers["City"].replace({'tehran': 'Tehran','Mashad': 'Mashh
 
 # checking to confirm if the city entries are standardised
 customers["City"].value_counts()
+
+# COMMAND ----------
+
+# DBTITLE 1,Visualize unique cities with bar chart
+customers['City'].value_counts().plot(kind='bar', color='orange')
+plt.title('Unique City')
+plt.ylabel('Count')
+plt.show()
 
 # COMMAND ----------
 
@@ -236,6 +261,7 @@ customers.info()
 
 # COMMAND ----------
 
+# DBTITLE 1,Orders data ingestion
 orders =spark.table("shoppers.data.orders").toPandas()
 
 # COMMAND ----------
@@ -246,6 +272,7 @@ orders =spark.table("shoppers.data.orders").toPandas()
 
 # COMMAND ----------
 
+# DBTITLE 1,Orders data inspection
 # checking the first few rows in the dataset
 orders.head()
 
@@ -300,6 +327,19 @@ orders["PaymentMethod"].value_counts()
 
 # COMMAND ----------
 
+#visualising unique payment methods
+orders['PaymentMethod'].value_counts().plot(kind='pie', color='blue', autopct='%1.1f%%')
+plt.title('Unique Payment Method')
+plt.ylabel('')
+plt.show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Almost half of the customers paid using the Gateway method and only 10.1% paid using cash
+
+# COMMAND ----------
+
 # further confirmation of the unique payment methods since the null entries did not show in the previous entry
 orders["PaymentMethod"].unique()
 
@@ -312,6 +352,19 @@ orders["PaymentMethod"].unique()
 
 # checking for unique status
 orders["Status"].value_counts()
+
+# COMMAND ----------
+
+# visualising different payment status
+bars = orders['Status'].value_counts().plot(kind='bar', color='green')
+plt.title('Order Status')
+plt.xlabel('Status')
+plt.ylabel('Counts')
+for bar in bars.patches:
+    height = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2, height, str(int(height)),
+             ha='center', va='bottom')
+plt.show()
 
 # COMMAND ----------
 
@@ -351,6 +404,15 @@ orders["Discount"].value_counts(dropna=False).sort_index()
 
 # COMMAND ----------
 
+#visualising discount frequency
+orders["Discount"].value_counts().sort_index().plot(kind='bar', color='blue')
+plt.title('Discount Frequency')
+plt.xlabel('Discount')
+plt.ylabel('Frequency')
+plt.show()
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC It shows that a large number of products was sold on 0 discount and in general the largest number was bewteen 0 and 0.10. The discounts range between 0.0 and 0.30 and an assumption is made that the large discounts were on selected items based on the quantities sold. The null values need further investigation to establish if they are really missing or zeros were recorded as missing and also to check the order status.
 
@@ -369,8 +431,17 @@ missing_discount['Status'].value_counts()
 
 # COMMAND ----------
 
+#visualise discount missing values
+missing_discount['Status'].value_counts().plot(kind='pie', color='green', autopct='%1.1f%%')
+plt.title('Missing Discount Values')
+plt.xlabel('Status')
+plt.ylabel('')
+plt.show()
+
+# COMMAND ----------
+
 # MAGIC %md
-# MAGIC Missing values in discount column show that they are really missing values and not zeros. Out of the 220 missing values, 207 show that the orders were completed, 11 were canceled and 3 were returned. The large number of completed orders shows that the values are indeed missing values. They will be dropped when cleaning data.
+# MAGIC Missing values in discount column show that they are really missing values and not zeros. Out of the 220 missing values, 207 (93.7%) show that the orders were completed, 11 (5%) were canceled and 3 (1.4%) were returned. The large number of completed orders shows that the values are indeed missing values. They will be dropped when cleaning data.
 
 # COMMAND ----------
 
@@ -391,6 +462,7 @@ missing_discount['Status'].value_counts()
 
 # COMMAND ----------
 
+# DBTITLE 1,Orders data cleaning
 # handling duplicated rows
 orders = orders.drop_duplicates()
 
@@ -494,6 +566,7 @@ orders["OrderDate"].max()
 
 # COMMAND ----------
 
+# DBTITLE 1,Payments data ingestion
 payments =spark.table("shoppers.data.payments").toPandas()
 
 # COMMAND ----------
@@ -504,6 +577,7 @@ payments =spark.table("shoppers.data.payments").toPandas()
 
 # COMMAND ----------
 
+# DBTITLE 1,Payments data inspection
 # checking the first few columns
 payments.head()
 
@@ -539,6 +613,20 @@ payments.duplicated().sum()
 
 # COMMAND ----------
 
+#checking unique payment status
+payments['PaymentStatus'].value_counts()
+
+# COMMAND ----------
+
+# visualise unique paymen methods
+payments['PaymentStatus'].value_counts().plot(kind='pie',color='grey', autpct='%1.1f%%')
+plt.title('Unique Payment Status')
+plt.xlabel('Payment Status')
+plt.ylabel('')
+plt.show()
+
+# COMMAND ----------
+
 # checking for the summary of numerical columns
 payments.describe()
 
@@ -566,6 +654,7 @@ payments.describe()
 
 # COMMAND ----------
 
+# DBTITLE 1,Payments data cleaning
 # dropping missing valuees in PaymentDate column
 payments = payments.dropna(subset=["PaymentDate"])
 
@@ -628,6 +717,7 @@ products =spark.table("shoppers.data.products").toPandas()
 
 # COMMAND ----------
 
+# DBTITLE 1,Products data inspection
 # checking the first five rows of the data
 products.head()
 
@@ -683,8 +773,17 @@ products["Category"].value_counts()
 
 # COMMAND ----------
 
+#visualising unique product category counts
+products["Category"].value_counts().plot(kind='pie', color='blue', autopct='%1.1f%%')
+plt.title('Unique Product Categories')
+plt.xlabel('Product Category')
+plt.ylabel('Count')
+plt.show()
+
+# COMMAND ----------
+
 # MAGIC %md
-# MAGIC It shows that there are 6 product categories with the highest being electronics with 9 categories. Gaming might sometimes fall under the main electronics but since the business categorises it that way and did not specify in the case study description, it will not be changed.
+# MAGIC It shows that there are 6 product categories with the highest being electronics occupying 45% of the product categories. Gaming might sometimes fall under the main electronics but since the business categorises it that way and did not specify in the case study description, it will not be changed.
 
 # COMMAND ----------
 
@@ -698,8 +797,21 @@ products.sort_values("UnitPrice", ascending=False)
 
 # COMMAND ----------
 
+
+
+# COMMAND ----------
+
+# visualising the distribution of UnitPrice
+products["UnitPrice"].plot(kind='hist', bins=10, edgecolor='black')
+plt.title('Distribution of Unit Price')
+plt.xlabel('Unit Price')
+plt.ylabel('Frequency')
+plt.show()
+
+# COMMAND ----------
+
 # MAGIC %md
-# MAGIC It shows that minimum UnitPrice is 7 and maximum is 260. Further checks were done to have an understanding of the prices of each product. It does not look like there are any outliers.
+# MAGIC It shows that minimum UnitPrice is R7 and maximum is R260. Further checks were done to have an understanding of the prices of each product. Bulk of the prices are below R100 with only a few selling for R180 and R260. These cannot be classified as outliers because of the nature of the products.
 
 # COMMAND ----------
 
@@ -728,6 +840,7 @@ products.duplicated().sum()
 
 # COMMAND ----------
 
+# DBTITLE 1,Joining tables
 # joining Orders to Customers
 shoppers_df = orders.merge(customers,on="CustomerID",how="left")
 
