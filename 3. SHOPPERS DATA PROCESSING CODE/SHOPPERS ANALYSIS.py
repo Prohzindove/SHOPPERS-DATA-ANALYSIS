@@ -619,7 +619,7 @@ payments['PaymentStatus'].value_counts()
 # COMMAND ----------
 
 # visualise unique paymen methods
-payments['PaymentStatus'].value_counts().plot(kind='pie',color='grey', autpct='%1.1f%%')
+payments['PaymentStatus'].value_counts().plot(kind='pie',color='grey', autopct='%1.1f%%')
 plt.title('Unique Payment Status')
 plt.xlabel('Payment Status')
 plt.ylabel('')
@@ -797,10 +797,6 @@ products.sort_values("UnitPrice", ascending=False)
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
 # visualising the distribution of UnitPrice
 products["UnitPrice"].plot(kind='hist', bins=10, edgecolor='black')
 plt.title('Distribution of Unit Price')
@@ -899,14 +895,23 @@ shoppers_df["SignupDateIssue"].value_counts()
 # COMMAND ----------
 
 #creating customer Age buckets
-customers["AgeGroup"] = pd.cut(customers["Age"], bins=[18, 24, 34, 44, 54, 65],
+shoppers_df["AgeGroup"] = pd.cut(shoppers_df["Age"], bins=[18, 24, 34, 44, 54, 65],
     labels=["18-27", "28-37", "38-47", "48-57", "58-65"],
     include_lowest=True)
 
 # COMMAND ----------
 
 # checking to see if the AgeGroup buckets were created
-customers['AgeGroup'].value_counts().sort_index()
+shoppers_df['AgeGroup'].value_counts().sort_index()
+
+# COMMAND ----------
+
+# visualising age buckets
+shoppers_df['AgeGroup'].value_counts().sort_index().plot(kind='bar', color='blue', edgecolor='orange')
+plt.title('Age Group Buckets')
+plt.xlabel('Age Group')
+plt.ylabel('Count')
+plt.show()
 
 # COMMAND ----------
 
@@ -925,8 +930,38 @@ shoppers_df["Year"] = shoppers_df["OrderDate"].dt.year
 
 # COMMAND ----------
 
+# visualing orders by year
+shoppers_df['Year'].value_counts().plot(kind='pie', color='blue', autopct='%1.1f%%')
+plt.title('Yearly Performance')
+plt.xlabel('Year')
+plt.ylabel('')
+plt.show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC The pie chart shows the distribution of orders across the years 2024, 2025 and 2026. Order counts were very similar between 2024 and 2025, with a difference of only 0.3%, indicating that the business maintained a stable level of order activity across those two years. However, 2026 accounts for less than half of the total order volume, which is expected since it runs upto June 2026 which does not cover a full twelve months. Thus, 2026's share should not be directly compared to the completed years without accounting for the incomplete period.
+
+# COMMAND ----------
+
 # extracting month from OrderDate and creating a new month column
 shoppers_df["Month"] = shoppers_df["OrderDate"].dt.month
+
+# COMMAND ----------
+
+# visualing orders by month
+shoppers_df['Month'].value_counts().sort_index().plot(kind='line', color='blue', marker='o')
+plt.title('Monthly Performance')
+plt.xlabel('Month')
+plt.ylabel('Count')
+plt.show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC    
+# MAGIC The line graph shows the distribution of orders across the twelve months of the year. Order volumes appear to fluctuate throughout the year, with peaks and troughs indicating variations in customer purchasing behaviour. This pattern suggests that certain months experience higher order activity, which could be tied to factors such as holidays, promotions or seasonal demand. 
+# MAGIC
 
 # COMMAND ----------
 
@@ -935,13 +970,49 @@ shoppers_df["MonthName"] = shoppers_df["OrderDate"].dt.month_name()
 
 # COMMAND ----------
 
+# visualing orders by year
+month_order = ['January', 'February', 'March', 'April', 'May', 'June',
+               'July', 'August', 'September', 'October', 'November', 'December']
+shoppers_df['MonthName'].value_counts().reindex(month_order).plot(kind='bar', color='blue')
+plt.title('Month Name Performance')
+plt.xlabel('Month Name')
+plt.ylabel('Count')
+plt.show()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+# MAGIC The distribution of orders across the twelve months of the year, from January to December show that order volumes fluctuate throughout the year, with certain months showing notably higher order activity than others. Identifying these peak and low-performing months can help the business plan inventory, staffing, and marketing strategies around periods of higher demand.
+# MAGIC
+
+# COMMAND ----------
+
 # creating dayname column
 shoppers_df["DayName"] = shoppers_df["OrderDate"].dt.day_name()
 
 # COMMAND ----------
 
+# visualing orders by dayname
+day_name = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
+               'Saturday']
+shoppers_df['DayName'].value_counts().reindex(day_name).plot(kind='bar', color='blue')
+plt.title('Day Name Performance')
+plt.xlabel('Day Name')
+plt.ylabel('Count')
+plt.show()
+
+# COMMAND ----------
+
 # MAGIC %md
-# MAGIC Time periods were created using OrderDate column. These periods include year, month and monthname and an additional dayname column was created.
+# MAGIC The distribution of orders across the seven days of the week shows that order activity is spread fairly evenly, though some days record slightly higher volumes than others. However, end of week and weekends starting from Friday to Sunday records high orders. 
+# MAGIC
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Time periods were created using OrderDate column. These periods include year, month and monthname and an additional dayname column was created.Identifying the busiest periods can help the business align staffing, promotions, and operational planning with peak purchasing periods.
 
 # COMMAND ----------
 
@@ -982,6 +1053,17 @@ shoppers_df["RealisedRevenue"] = shoppers_df["UnfilteredRevenue"].where((shopper
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ### Business questions 
+# MAGIC Revenue & Orders: How much revenue did the shop make, from how many orders? What is the average order value?
+# MAGIC Revenue Trend: Is revenue growing, shrinking or flat month by month? Are there any seasonal peaks?
+# MAGIC Product Performance: Which products and categories bring in the most revenue? Which sell the most units? Are these the same?
+# MAGIC Customer Value: Which cities and customer segments (New, Regular, VIP) are most valuable?
+# MAGIC Order & Payment Status: What share of orders are cancelled or returned? What share of payments fail? Do some payment methods fail more often?
+# MAGIC Discount Impact: Do bigger discounts lead to bigger orders, or just lower revenue?
+
+# COMMAND ----------
+
 # calculating shoppers' total unfiltered revenue
 shoppers_df["UnfilteredRevenue"].sum()
 
@@ -1003,6 +1085,22 @@ display (revenue_difference)
 revenue_difference = (((shoppers_df["UnfilteredRevenue"].sum()-shoppers_df["RealisedRevenue"].sum())/(shoppers_df["UnfilteredRevenue"].sum()))*100).round(2)
 
 display(revenue_difference)
+
+# COMMAND ----------
+
+# visualising UnfilteredRevenue vs RealisedRevenue
+revenue_comparison = pd.DataFrame({
+    'Revenue Type': ['Unfiltered Revenue', 'Realised Revenue'],
+    'Amount': [shoppers_df['UnfilteredRevenue'].sum(), shoppers_df['RealisedRevenue'].sum()]
+})
+
+ax = revenue_comparison.plot(kind='bar', x='Revenue Type', y='Amount', color=['blue', 'green'], legend=False)
+plt.title('Unfiltered Revenue vs Realised Revenue')
+plt.xlabel('Revenue Type')
+plt.ylabel('Amount')
+plt.xticks(rotation=0)
+plt.tight_layout()
+plt.show()
 
 # COMMAND ----------
 
@@ -1031,6 +1129,86 @@ shoppers_df[shoppers_df["City"].isna()][
 
 # MAGIC %md
 # MAGIC CustomerID 999999 was identified as a placeholder customer ID. These records could not be matched to the customer dataset, resulting in missing Age, City, SignupDate and CustomerSegment information. The transactions were retained because their order and revenue information remained valid. City and CustomerSegment were classified as Unknown, while Age and SignupDate were left missing to avoid introducing artificial values.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Business Question 1: 
+# MAGIC * Revenue & Orders
+# MAGIC * How much revenue did the shop make, from how many orders? What is the average order value?
+# MAGIC * Using RealisedRevenue (only completed and paid orders)
+# MAGIC
+
+# COMMAND ----------
+
+# Total realised revenue 
+total_revenue = shoppers_df["RealisedRevenue"].sum()
+
+# Number of orders (unique OrderIDs where RealisedRevenue > 0, i.e. completed and paid)
+num_orders = shoppers_df.loc[shoppers_df["RealisedRevenue"] > 0, "OrderID"].nunique()
+
+# Average order value = total revenue / number of orders
+avg_order_value = (total_revenue / num_orders).round(2)
+
+print(f"Total Realised Revenue: R{total_revenue:,.2f}")
+print(f"Number of Orders: {num_orders:,}")
+print(f"Average Order Value: R{avg_order_value:,.2f}")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC  ### Business Question 2
+# MAGIC  * Revenue Trend
+# MAGIC  * Is revenue growing, shrinking or flat month by month? 
+# MAGIC  * Are there any seasonal peaks?
+
+# COMMAND ----------
+
+# Monthly revenue trend using RealisedRevenue (completed & paid orders only)
+monthly_revenue = (
+    shoppers_df[shoppers_df["RealisedRevenue"] > 0]
+    .groupby(["Year", "Month", "MonthName"])["RealisedRevenue"]
+    .sum()
+    .reset_index()
+    .sort_values(["Year", "Month"])
+)
+monthly_revenue["YearMonth"] = monthly_revenue["Year"].astype(str) + "-" + monthly_revenue["Month"].astype(str).str.zfill(2)
+
+# Plot
+monthly_revenue.plot(x="YearMonth", y="RealisedRevenue", marker="o", color="steelblue",
+                     linewidth=2, figsize=(14, 6), title="Monthly Realised Revenue Trend",
+                     xlabel="Year-Month", ylabel="Revenue (R)", grid=True)
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# Summary statistics
+peak = monthly_revenue.loc[monthly_revenue["RealisedRevenue"].idxmax()]
+low = monthly_revenue.loc[monthly_revenue["RealisedRevenue"].idxmin()]
+print(f"Peak:   {peak['MonthName']} ({peak['YearMonth']}) at R{peak['RealisedRevenue']:,.2f}")
+print(f"Lowest: {low['MonthName']} ({low['YearMonth']}) at R{low['RealisedRevenue']:,.2f}")
+print(f"Average monthly revenue: R{monthly_revenue['RealisedRevenue'].mean():,.2f}")
+print(f"Total months covered: {len(monthly_revenue)}")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+# MAGIC * ### Monthly Revenue Trend Analysis
+# MAGIC The line chart above tracks Realised Revenue month by month from January 2024 through June 2026, using only completed and paid orders. The trend provides several key insights:
+# MAGIC
+# MAGIC - **Overall Direction:** Revenue shows the general trajectory of the business across the 30-month period. A clear upward or downward slope indicates whether the shop is growing or contracting, while a relatively flat line suggests stagnation.
+# MAGIC - **Seasonal Peaks:** Spikes in the chart highlight months where revenue was notably higher, which may align with seasonal shopping events, promotions, or holidays. The peak month and its revenue value are printed below the chart for quick reference.
+# MAGIC - **Troughs:** Dips in the line point to slower trading periods. The lowest-revenue month is also identified in the summary statistics, helping to pinpoint when the business is most vulnerable.
+# MAGIC - **Average Monthly Revenue:** The average line provides a benchmark — months above it were strong performers and months below it underperformed relative to the norm.
+# MAGIC - **Volatility:** The sharpness of the rises and falls indicates how stable or volatile the shop's monthly revenue is. Frequent large swings suggest revenue is heavily dependent on a few key periods rather than being evenly distributed throughout the year.
+# MAGIC
+# MAGIC These observations will help guide decisions around inventory planning, marketing campaigns, and discount strategies to smooth out troughs and capitalise on peak periods.
 
 # COMMAND ----------
 
