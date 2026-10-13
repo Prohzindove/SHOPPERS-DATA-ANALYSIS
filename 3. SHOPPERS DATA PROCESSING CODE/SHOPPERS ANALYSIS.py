@@ -432,7 +432,7 @@ missing_discount['Status'].value_counts()
 # COMMAND ----------
 
 #visualise discount missing values
-missing_discount['Status'].value_counts().plot(kind='pie', color='green', autopct='%1.1f%%')
+missing_discount['Status'].value_counts().plot(kind='pie',colormap='plasma', autopct='%1.1f%%')
 plt.title('Missing Discount Values')
 plt.xlabel('Status')
 plt.ylabel('')
@@ -619,7 +619,7 @@ payments['PaymentStatus'].value_counts()
 # COMMAND ----------
 
 # visualise unique paymen methods
-payments['PaymentStatus'].value_counts().plot(kind='pie',color='grey', autopct='%1.1f%%')
+payments['PaymentStatus'].value_counts().plot(kind='pie', colormap='tab10', autopct='%1.1f%%')
 plt.title('Unique Payment Status')
 plt.xlabel('Payment Status')
 plt.ylabel('')
@@ -774,8 +774,8 @@ products["Category"].value_counts()
 # COMMAND ----------
 
 #visualising unique product category counts
-products["Category"].value_counts().plot(kind='pie', color='blue', autopct='%1.1f%%')
-plt.title('Unique Product Categories')
+products["Category"].value_counts().plot(kind='pie', autopct='%1.1f%%')
+plt.title('Unique Product Categories', color='Orange', fontsize=14)
 plt.xlabel('Product Category')
 plt.ylabel('Count')
 plt.show()
@@ -931,7 +931,7 @@ shoppers_df["Year"] = shoppers_df["OrderDate"].dt.year
 # COMMAND ----------
 
 # visualing orders by year
-shoppers_df['Year'].value_counts().plot(kind='pie', color='blue', autopct='%1.1f%%')
+shoppers_df['Year'].value_counts().plot(kind='pie', colormap='Set1', autopct='%1.1f%%')
 plt.title('Yearly Performance')
 plt.xlabel('Year')
 plt.ylabel('')
@@ -1012,7 +1012,7 @@ plt.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Time periods were created using OrderDate column. These periods include year, month and monthname and an additional dayname column was created.Identifying the busiest periods can help the business align staffing, promotions, and operational planning with peak purchasing periods.
+# MAGIC In this section, time periods were created using OrderDate column. These periods include year, month and monthname and an additional dayname column was created. Identifying the busiest periods can help the business align staffing, promotions, and operational planning with peak purchasing periods.
 
 # COMMAND ----------
 
@@ -1047,23 +1047,6 @@ shoppers_df["RealisedRevenue"] = shoppers_df["UnfilteredRevenue"].where((shopper
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC # 7. Answering business questions
-# MAGIC In this notebook, only the business question will be answered. The rest of the questions will be answered using google sheets visualisations and pivot tables.
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Business questions 
-# MAGIC Revenue & Orders: How much revenue did the shop make, from how many orders? What is the average order value?
-# MAGIC Revenue Trend: Is revenue growing, shrinking or flat month by month? Are there any seasonal peaks?
-# MAGIC Product Performance: Which products and categories bring in the most revenue? Which sell the most units? Are these the same?
-# MAGIC Customer Value: Which cities and customer segments (New, Regular, VIP) are most valuable?
-# MAGIC Order & Payment Status: What share of orders are cancelled or returned? What share of payments fail? Do some payment methods fail more often?
-# MAGIC Discount Impact: Do bigger discounts lead to bigger orders, or just lower revenue?
-
-# COMMAND ----------
-
 # calculating shoppers' total unfiltered revenue
 shoppers_df["UnfilteredRevenue"].sum()
 
@@ -1089,10 +1072,9 @@ display(revenue_difference)
 # COMMAND ----------
 
 # visualising UnfilteredRevenue vs RealisedRevenue
-revenue_comparison = pd.DataFrame({
-    'Revenue Type': ['Unfiltered Revenue', 'Realised Revenue'],
-    'Amount': [shoppers_df['UnfilteredRevenue'].sum(), shoppers_df['RealisedRevenue'].sum()]
-})
+revenue_comparison = shoppers_df[['UnfilteredRevenue', 'RealisedRevenue']].sum().reset_index()
+revenue_comparison.columns = ['Revenue Type', 'Amount']
+revenue_comparison['Revenue Type'] = ['Unfiltered Revenue', 'Realised Revenue']
 
 ax = revenue_comparison.plot(kind='bar', x='Revenue Type', y='Amount', color=['blue', 'green'], legend=False)
 plt.title('Unfiltered Revenue vs Realised Revenue')
@@ -1111,7 +1093,7 @@ plt.show()
 
 # MAGIC %md
 # MAGIC * ### Data cleaning extension
-# MAGIC This section is an an extension of the data cleaning process because it was noticed after joining the tables that the place holder that is on CustomerID resulted i duplicates and changing it during the normal data presentation will not give a true picture. Object columns will be replaced by an Unknown
+# MAGIC This section is an an extension of the data cleaning process because it was noticed after joining the tables that the place holder that is on CustomerID resulted in duplicates and changing it during the normal data presentation will not give a true picture. Object columns will be replaced by an Unknown
 
 # COMMAND ----------
 
@@ -1133,19 +1115,20 @@ shoppers_df[shoppers_df["City"].isna()][
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC
+# MAGIC %md
+# MAGIC # 7. Answering business questions
+# MAGIC In this section business question will be answered before downloading the final table. 
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Business Question 1: 
-# MAGIC * Revenue & Orders
+# MAGIC ### Business Question 1: Revenue and Orders
 # MAGIC * How much revenue did the shop make, from how many orders? What is the average order value?
 # MAGIC * Using RealisedRevenue (only completed and paid orders)
-# MAGIC
 
 # COMMAND ----------
 
+# DBTITLE 1,BQ1: Revenue and orders
 # Total realised revenue 
 total_revenue = shoppers_df["RealisedRevenue"].sum()
 
@@ -1162,59 +1145,258 @@ print(f"Average Order Value: R{avg_order_value:,.2f}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC  ### Business Question 2
-# MAGIC  * Revenue Trend
+# MAGIC The shop's total realised revenue (from completed and paid orders only) is **R2,976,63**, the number of unique orders that contributed to that revenue is **42,526**, and the average order value is **R69.99**. This gives a clear baseline picture of the shop's overall financial performance before diving into trend and category-level analysis.
+# MAGIC
+# MAGIC **Business recommendation:** With an average order value of only **R69.99**, the shop should focus on strategies to increase basket size, such as product bundling, minimum-spend free shipping, and upselling or cross-selling at checkout. Raising the average order value even modestly across 42,526 orders would have a significant impact on total revenue without needing to acquire new customers.
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Business Question 2: Revenue Trend
 # MAGIC  * Is revenue growing, shrinking or flat month by month? 
 # MAGIC  * Are there any seasonal peaks?
 
 # COMMAND ----------
 
-# Monthly revenue trend using RealisedRevenue (completed & paid orders only)
+# DBTITLE 1,BQ2: Revenue trend
+# Monthly revenue trend (RealisedRevenue only)
 monthly_revenue = (
     shoppers_df[shoppers_df["RealisedRevenue"] > 0]
-    .groupby(["Year", "Month", "MonthName"])["RealisedRevenue"]
+    .groupby(["Year", "Month"])["RealisedRevenue"]
     .sum()
     .reset_index()
     .sort_values(["Year", "Month"])
 )
 monthly_revenue["YearMonth"] = monthly_revenue["Year"].astype(str) + "-" + monthly_revenue["Month"].astype(str).str.zfill(2)
 
-# Plot
-monthly_revenue.plot(x="YearMonth", y="RealisedRevenue", marker="o", color="steelblue",
-                     linewidth=2, figsize=(14, 6), title="Monthly Realised Revenue Trend",
-                     xlabel="Year-Month", ylabel="Revenue (R)", grid=True)
+# Simple line plot
+monthly_revenue.plot(x="YearMonth", y="RealisedRevenue", marker="*", figsize=(8, 5), title="Monthly Realised Revenue")
 plt.xticks(rotation=45)
 plt.tight_layout()
 plt.show()
 
-# Summary statistics
-peak = monthly_revenue.loc[monthly_revenue["RealisedRevenue"].idxmax()]
-low = monthly_revenue.loc[monthly_revenue["RealisedRevenue"].idxmin()]
-print(f"Peak:   {peak['MonthName']} ({peak['YearMonth']}) at R{peak['RealisedRevenue']:,.2f}")
-print(f"Lowest: {low['MonthName']} ({low['YearMonth']}) at R{low['RealisedRevenue']:,.2f}")
-print(f"Average monthly revenue: R{monthly_revenue['RealisedRevenue'].mean():,.2f}")
-print(f"Total months covered: {len(monthly_revenue)}")
+# Quick stats
+print(monthly_revenue["RealisedRevenue"].describe())
 
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC The above displayed monthly Realised Revenue from January 2024 to June 2026, shows only completed and paid orders. Revenue fluctuates but remains broadly steady throughout 2024 and 2025, peaking several times with values around R110,000. In early 2026, there is a marked drop, with monthly revenue falling below R70,000. Overall, the chart signals that revenue was stable for most of the period but declined sharply at the start of 2026, so the trend is not purely upward-instead, there is strong performance followed by a recent downturn.
 # MAGIC
-# MAGIC * ### Monthly Revenue Trend Analysis
-# MAGIC The line chart above tracks Realised Revenue month by month from January 2024 through June 2026, using only completed and paid orders. The trend provides several key insights:
+# MAGIC **Business recommendation:** The shop should investigate the root causes of the early 2026 revenue decline and take corrective action before the downturn becomes a long-term trend. Additionally, the shop should build on the revenue peaks observed in 2024 and 2025 by identifying what drove those high-performing months and replicating those strategies to stabilise and grow revenue going forward.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Business Question 3: Product Performance
+# MAGIC * Which products and categories bring in the most revenue?
+# MAGIC * Which sell the most units? 
+# MAGIC * Are these the same?
+
+# COMMAND ----------
+
+# DBTITLE 1,BQ3: Product performance
+# Product Performance: revenue & units by product and category (RealisedRevenue only)
+
+paid_df = shoppers_df[shoppers_df["RealisedRevenue"] > 0]
+
+def summary_by(col):
+    return (
+        paid_df.groupby(col)
+        .agg(TotalRevenue=("RealisedRevenue", "sum"), TotalUnits=("Quantity", "sum"))
+        .sort_values("TotalRevenue", ascending=False)
+        .reset_index()
+    )
+
+# Product performance by ProductName
+product_summary = summary_by("ProductName")
+top_rev_products = product_summary.head(10)
+top_units_products = product_summary.sort_values("TotalUnits", ascending=False).head(10)
+
+fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+for ax, df, col, title, label, color in [
+    (axes[0], top_rev_products, "TotalRevenue", "Top 10 Products by Revenue", "Realised Revenue (R)", "steelblue"),
+    (axes[1], top_units_products, "TotalUnits", "Top 10 Products by Units Sold", "Units Sold", "coral"),
+]:
+    ax.barh(df["ProductName"], df[col], color=color)
+    ax.invert_yaxis()
+    ax.set_title(title)
+    ax.set_xlabel(label)
+plt.tight_layout()
+plt.show()
+
+# Product performance by product category
+category_summary = summary_by("Category")
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+for ax, col, title, ylabel, color in [
+    (axes[0], "TotalRevenue", "Revenue by Category", "Realised Revenue (R)", "steelblue"),
+    (axes[1], "TotalUnits", "Units Sold by Category", "Units Sold", "coral"),
+]:
+    ax.bar(category_summary["Category"], category_summary[col], color=color)
+    ax.set_title(title)
+    ax.set_ylabel(ylabel)
+    ax.tick_params(axis="x", rotation=45)
+plt.tight_layout()
+plt.show()
+
+# Are top revenue products the same as top units products? 
+overlap = set(top_rev_products["ProductName"]) & set(top_units_products["ProductName"])
+print("Top 10 by Revenue:", list(top_rev_products["ProductName"]))
+print("Top 10 by Units:  ", list(top_units_products["ProductName"]))
+print(f"\nProducts in both lists: {len(overlap)}")
+print("Overlap:", sorted(overlap))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC  The product bar charts show the top 10 performing products and product categories. Headphones and office chairs bring in the highest revenue whereas note book and phone cases have the highest sold units. On the other hand, Electronis category brings in the highest revenue followed by accessories, whereas accessories have the highest sales units followed by electronics. This reveal that the top products by revenue are not always the top sellers by units, with only partial overlap between the two lists (headphones and power bank). Similarly, the category charts confirm that high-revenue categories and high-volume categories are not necessarily the same, highlighting that revenue and sales volume tell different stories about product performance.
 # MAGIC
-# MAGIC - **Overall Direction:** Revenue shows the general trajectory of the business across the 30-month period. A clear upward or downward slope indicates whether the shop is growing or contracting, while a relatively flat line suggests stagnation.
-# MAGIC - **Seasonal Peaks:** Spikes in the chart highlight months where revenue was notably higher, which may align with seasonal shopping events, promotions, or holidays. The peak month and its revenue value are printed below the chart for quick reference.
-# MAGIC - **Troughs:** Dips in the line point to slower trading periods. The lowest-revenue month is also identified in the summary statistics, helping to pinpoint when the business is most vulnerable.
-# MAGIC - **Average Monthly Revenue:** The average line provides a benchmark — months above it were strong performers and months below it underperformed relative to the norm.
-# MAGIC - **Volatility:** The sharpness of the rises and falls indicates how stable or volatile the shop's monthly revenue is. Frequent large swings suggest revenue is heavily dependent on a few key periods rather than being evenly distributed throughout the year.
+# MAGIC **Business recommendation:** The shop should maintain a balanced product portfolio that includes both high-revenue items (e.g., headphones, power banks) and high-volume sellers (e.g., notebooks, phone cases). High-revenue products drive profitability and should be prioritised for premium positioning and targeted promotions, while high-volume, lower-priced products serve as customer acquisition tools and basket-fillers. The shop should also investigate bundling opportunities across these two groups, for instance, pairing a high-revenue product with a high-volume accessory, to increase both average order value and units sold per transaction.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Business Question 4: Customer Value
+# MAGIC * Which cities and customer segments (New, Regular, VIP) are most valuable? 
+
+# COMMAND ----------
+
+# DBTITLE 1,BQ4: Customer Value Analysis
+# Only keep completed and paid orders
+paid_orders = shoppers_df[shoppers_df["RealisedRevenue"] > 0]
+
+# Group by City and CustomerSegment and calculate total revenue and number of orders
+city_segment = paid_orders.groupby(["City", "CustomerSegment"]).agg(
+    TotalRevenue=("RealisedRevenue", "sum"),
+    OrderCount=("OrderID", "nunique")
+).reset_index()
+
+# Sort by TotalRevenue from highest to lowest
+city_segment = city_segment.sort_values("TotalRevenue", ascending=False)
+
+# Bar chart with separate bars for each segment per city
+city_pivot = city_segment.pivot(index="City", columns="CustomerSegment", values="TotalRevenue")
+
+city_pivot.plot(kind="bar", figsize=(12, 6))
+plt.title("Total Revenue by City and Customer Segment")
+plt.xlabel("City")
+plt.ylabel("Total Revenue")
+plt.xticks(rotation=45)
+plt.legend(title="Customer Segment")
+plt.tight_layout()
+plt.show()
+
+# COMMAND ----------
+
+# DBTITLE 1,Customer Value Summary & Recommendations
+# MAGIC %md
+# MAGIC The Regular segment is the most valuable across all cities, with Tehran leading at **R454,940** from **6,616** orders, followed by Mashhad, Karaj, Isfahan and Shiraz. The New segment is the second most valuable, especially in large cities, while the VIP segment does not appear in the top 15 at all due to its small customer base.
 # MAGIC
-# MAGIC These observations will help guide decisions around inventory planning, marketing campaigns, and discount strategies to smooth out troughs and capitalise on peak periods.
+# MAGIC **Business recommendations:** The shop should focus marketing and retention on Regular customers in the top five cities, and keep New customers engaged with welcome offers to convert them into Regulars. The business should also investigate why VIP customers are so few and whether the VIP criteria need to be adjusted.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Business Question 5: Order and Payment Status
+# MAGIC * What share of orders are cancelled or returned?
+# MAGIC * What share of payments fail? 
+# MAGIC * Do some payment methods fail more often? 
+
+# COMMAND ----------
+
+# DBTITLE 1,BQ5: Order and Payment Status
+# Order status pie chart
+order_status_counts = shoppers_df["Status"].value_counts()
+
+# Payment status pie chart
+payment_status_counts = shoppers_df["PaymentStatus"].value_counts()
+
+# Failure rate by payment method (bar chart)
+payment_method_status = pd.crosstab(
+    shoppers_df["PaymentMethod"], shoppers_df["PaymentStatus"], normalize="index"
+) * 100
+
+# Two pie charts side by side
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+order_status_counts.plot(kind="pie", ax=axes[0], autopct="%1.1f%%", startangle=90, pctdistance=0.75, legend=True, labels=None)
+axes[0].set_title("Order Status")
+axes[0].set_ylabel("")
+
+payment_status_counts.plot(kind="pie", ax=axes[1], autopct="%1.1f%%", startangle=90, pctdistance=0.75, legend=True, labels=None)
+axes[1].set_title("Payment Status")
+axes[1].set_ylabel("")
+
+plt.tight_layout()
+plt.show()
+
+# Bar chart below
+payment_method_status["Failed"].sort_values(ascending=False).plot(kind="bar", color="tomato", figsize=(10, 5))
+plt.title("Failure Rate by Payment Method")
+plt.ylabel("Failure Rate (%)")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# COMMAND ----------
+
+# DBTITLE 1,BQ5: Status Insights & Recommendation
+# MAGIC %md
+# MAGIC About 8% of orders are cancelled or returned, and 4% of payments fail, nearly all payment methods show similar failure rates around 4%. This suggests cancellations and payment failures are relatively uncommon, and failure rates are consistent across payment options.
+# MAGIC
+# MAGIC **Business recommendation:** Focus efforts on reducing cancellations and payment failures, but there is no urgent need to change payment method offerings as failure rates are stable.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Business qestuion 6: Discount Impact
+# MAGIC * Do bigger discounts lead to bigger orders, or just lower revenue?
+
+# COMMAND ----------
+
+# DBTITLE 1,BQ6: Discount Impact Analysis
+# Analyze impact of discount size on order quantity and revenue
+
+discount_analysis = shoppers_df.groupby("Discount").agg(
+    AvgOrderSize=("Quantity", "mean"),
+    AvgRevenue=("RealisedRevenue", "mean"),
+    OrderCount=("OrderID", "count")
+).reset_index()
+
+fig, axs = plt.subplots(1, 2, figsize=(12, 5))
+
+# Plot average order size vs Discount
+axs[0].plot(discount_analysis["Discount"], discount_analysis["AvgOrderSize"], marker='o', color='royalblue')
+axs[0].set_title("Average Order Size vs Discount")
+axs[0].set_xlabel("Discount (%)")
+axs[0].set_ylabel("Avg Order Size (units)")
+axs[0].grid(True)
+
+# Plot average revenue vs Discount
+axs[1].plot(discount_analysis["Discount"], discount_analysis["AvgRevenue"], marker='o', color='orange')
+axs[1].set_title("Average Revenue vs Discount")
+axs[1].set_xlabel("Discount (%)")
+axs[1].set_ylabel("Avg Revenue (R)")
+axs[1].grid(True)
+
+plt.tight_layout()
+plt.show()
+
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Customer buying behavior is sensitive to moderate discount levels. Average order size rises sharply at a 0.05 discount, then drops as discounts get bigger, with only a slight increase at the highest discount. Revenue consistently decreases as the discount increases, confirming that higher discounts mainly reduce earnings per order.
+# MAGIC
+# MAGIC **Business recommendation:** Use modest discounts (around 0.05) to encourage higher order sizes. Avoid deep discounts except for clearance, since they mostly cut revenue without driving bigger purchases.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC * ### Downloading data
-# MAGIC The final dataset will be downloaded for analysis in google sheets.
+# MAGIC The final dataset will be downloaded for alternative analysis in other platforms like Lovable and Google Sheets.
 
 # COMMAND ----------
 
@@ -1225,4 +1407,4 @@ display (shoppers_df)
 
 # MAGIC %md
 # MAGIC # Conclusion
-# MAGIC This analysis explored the performance of the online store from 1 January 2024 to 30 June 2026. Four datasets covering customers, orders, products and payments were loaded and inspected separately. Data cleaning was performed to address missing values, incorrect data types and other data quality issues. Additional features, including customer age groups and other relevant categories, were created to support the analysis. The four datasets were then joined using CustomerID, ProductID and OrderID to create one combined dataset named shoppers_df. The dataset was transfered to google sheets for further analysis to understand customer behaviour, sales, products and payment patterns.
+# MAGIC This analysis explored the performance of the online store from 1 January 2024 to 30 June 2026. Four datasets covering customers, orders, products and payments were loaded and inspected separately. Data cleaning was performed to address missing values, incorrect data types and other data quality issues. Additional features, including customer age groups and other relevant categories, were created to support the analysis. The four datasets were then joined using CustomerID, ProductID and OrderID to create one combined dataset named shoppers_df. Business questions were answered through clear visualisations and business recommendations were provided for each question. The dataset was then transferred to Google Sheets for alternative analysis of customer behaviour, sales, products and payment patterns.
